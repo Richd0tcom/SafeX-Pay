@@ -34,3 +34,28 @@ func TestCreateAccounts(t *testing.T){
 	require.NotZero(t,account.CreatedAt)
 
 }
+
+func TestListAccounts(t *testing.T){
+	args := ListAccountsParams{
+		Limit:1 ,
+		Offset:1,
+	}
+	accounts, err := testQueries.ListAccounts(context.Background(),args)
+	//checks that the CreateAccount function returns NO error. will fail the test if error exists
+	require.NoError(t, err)
+	//checks that the new account created should not be empty.
+	require.NotEmpty(t,accounts)
+
+	//checks that the values of the account object are of the sam type.
+	require.Equal(t, args.Owner, account.Owner)
+	require.Equal(t, args.Balance, account.Balance)
+	require.Equal(t, args.Currency, account.Currency)
+	require.
+
+	//checks that the values of the Timestamp is not its zero value i.e it has been created
+	require.NotZero(t,account.ID)
+	require.NotZero(t,account.CreatedAt)
+
+}
+func TestUpdateAccount(t *testing.T){}
+func TestDeleteAccount(){}
