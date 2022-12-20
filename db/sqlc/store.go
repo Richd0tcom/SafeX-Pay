@@ -20,7 +20,7 @@ func NewStore(db *sql.DB) *Store {
 		Queries: New(db),
 	}
 }
-
+var txKey = struct{}{}
 //Takes a context and a callback function as input, starts a new database transaction, creat a new Queries object and with that transaction and call the callback function with the created Queries object and finally commit or rollback the transaction based on the error returned by the callback function.
 func (store *Store) execTx(ctx context.Context, fn func(*Queries) error) error{
 	tx, err :=store.db.BeginTx(ctx, nil)
@@ -48,6 +48,8 @@ func (store Store) TransferTx(ctx context.Context, args TransferTxParams) (Trans
 
 	err:= store.execTx(ctx, func(q *Queries) error {
 		var err error
+
+		
 		result.Transfer, err = q.CreateTransfer(ctx,CreateTransferParams{
 			FromAccountID: args.FromAccountID,
 			ToAccountID: args.ToAccountID,
@@ -57,6 +59,7 @@ func (store Store) TransferTx(ctx context.Context, args TransferTxParams) (Trans
 			return err
 		}
 
+		
 		result.FromEntry, err = q.CreateEntry(ctx, CreateEntryParams{
 			AccountID: args.FromAccountID,
 			Amount: -args.Amount,
@@ -65,6 +68,7 @@ func (store Store) TransferTx(ctx context.Context, args TransferTxParams) (Trans
 			return err
 		}
 
+		
 		result.ToEntry, err = q.CreateEntry(ctx, CreateEntryParams{
 			AccountID: args.ToAccountID,
 			Amount: args.Amount,
@@ -74,6 +78,35 @@ func (store Store) TransferTx(ctx context.Context, args TransferTxParams) (Trans
 		}
 
 		//TODO: UPDATE account balance info
+		
+		acc1,err:= q.GetAccountForUpdate(ctx, args.FromAccountID)
+		if err != nil {
+			return err
+		}
+		
+		result.FromAccount, err = q.UpdateAccount(ctx, UpdateAccountParams{
+			ID: args.FromAccountID,
+			Balance: acc1.Balance - args.Amount,
+		})
+		if err != nil {
+			return err
+		}
+
+		
+		acc2,err:= q.GetAccountForUpdate(ctx, args.ToAccountID)
+		if err != nil {
+			return err
+		}
+	
+		result.ToAccount, err = q.UpdateAccount(ctx, UpdateAccountParams{
+			ID: args.ToAccountID,
+			Balance: acc2.Balance + args.Amount,
+		})
+		if err != nil {
+			return err
+		}
+		//the above implementation fails beacause the two goroutines are fetching the same account at the same time and it is non blocking
+
 		return nil
 	})
 
