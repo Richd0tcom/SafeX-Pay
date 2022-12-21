@@ -12,21 +12,18 @@ func TestTransferTx(t *testing.T) {
 	account1 := createRandomAccount(t)
 	account2 := createRandomAccount(t)
 
-
-	
 	amount := int64(10)
 	n := 5
 
-	
 	//TODO: use concurrency to handle multiple transfers
 	errsChan := make(chan error)
 	transferResultsChan := make(chan TransferTxResults)
 
-	existed:= make(map[int]bool)
+	existed := make(map[int]bool)
 	for i := 0; i < n; i++ {
 		go func() {
-			
-			results, err := store.TransferTx(context.Background(), TransferTxParams{
+
+			results, err := store.TransferTx(context.Background(), CreateTransferParams{
 				FromAccountID: account1.ID,
 				ToAccountID:   account2.ID,
 				Amount:        amount,
@@ -79,10 +76,9 @@ func TestTransferTx(t *testing.T) {
 		require.NoError(t, err)
 
 		//check account for balances
-		
-		
+
 		fromAccount := results.FromAccount
-		
+
 		require.NotEmpty(t, fromAccount)
 		require.Equal(t, account1.ID, fromAccount.ID)
 
@@ -90,20 +86,18 @@ func TestTransferTx(t *testing.T) {
 		require.NotEmpty(t, toAccount)
 		require.Equal(t, account2.ID, toAccount.ID)
 
+		//check balances
 
-		//check balances 
+		diff1 := account1.Balance - fromAccount.Balance
+		diff2 := toAccount.Balance - account2.Balance
+		require.Equal(t, diff1, diff2)
+		require.True(t, diff1%amount == 0)
 
-		diff1:= account1.Balance - fromAccount.Balance
-		diff2:= toAccount.Balance - account2.Balance
-		require.Equal(t, diff1,diff2)
-		require.True(t, diff1%amount ==0)
-
-		k := int(diff1/amount)
-		require.True(t, k>=1 && k<=n)
+		k := int(diff1 / amount)
+		require.True(t, k >= 1 && k <= n)
 		require.NotContains(t, existed, k)
 
 		existed[k] = true
-		
 
 	}
 
