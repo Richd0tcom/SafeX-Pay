@@ -75,23 +75,19 @@ func (store Store) TransferTx(ctx context.Context, args CreateTransferParams) (T
 		}
 
 		//TODO: UPDATE account balance info
-
-		result.FromAccount, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
-			ID:     args.FromAccountID,
-			Amount: -args.Amount,
-		})
-		if err != nil {
-			return err
+		if args.FromAccountID< args.ToAccountID{
+			result.FromAccount,result.ToAccount,err= addMoney(ctx, q, args.FromAccountID, -args.Amount, args.ToAccountID, args.Amount)
+			if err != nil {
+				return err
+			}
+		} else {
+			result.ToAccount,result.FromAccount,err =addMoney(ctx, q, args.ToAccountID, args.Amount, args.FromAccountID, -args.Amount)
+			if err != nil {
+				return err
+			}
 		}
-
-		result.ToAccount, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
-			ID:     args.ToAccountID,
-			Amount: args.Amount,
-		})
-		if err != nil {
-			return err
-		}
-		//the above implementation fails beacause the two goroutines are fetching the same account at the same time and it is non blocking
+		
+		//faulty implementation was fixed in 
 
 		return nil
 	})
@@ -111,4 +107,26 @@ type TransferTxResults struct {
 	ToAccount   Account  `json:"to_account"`
 	FromEntry   Entry    `json:"from_entry"`
 	ToEntry     Entry    `json:"to_entry"`
+}
+
+func addMoney(
+	ctx context.Context,
+	q  *Queries,
+	accountID1 int64,
+	amount1 int64,
+	accountID2 int64,
+	amount2 int64,
+) (account1 Account, account2 Account, err error) {
+	account1, err=q.AddAccountBalance(ctx, AddAccountBalanceParams{
+		ID:     accountID1,
+		Amount: amount1,
+	})
+	if err != nil {
+		return 
+	}
+	account2, err=q.AddAccountBalance(ctx, AddAccountBalanceParams{
+		ID:     accountID2,
+		Amount: amount2,
+	})
+	return
 }
