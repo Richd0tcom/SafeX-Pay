@@ -51,7 +51,7 @@ jobs:
     #   run: go build -v ./...
 
     - name: Run migrations
-      run: make migratup
-       
+      run: make migrateup
+
     - name: Test
       run: make test #this runs the test command defined in the makefile
