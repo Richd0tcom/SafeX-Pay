@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+
+	"github.com/google/uuid"
 )
 
 // provides all functions to execute queries and transactions.
@@ -74,8 +76,8 @@ func (store Store) TransferTx(ctx context.Context, args CreateTransferParams) (T
 			return err
 		}
 
-		//TODO: UPDATE account balance info
-		if args.FromAccountID< args.ToAccountID{
+		//TODO: UPDATE account balance info (changed to use UUID)
+		if args.FromAccountID.Time() < args.ToAccountID.Time(){
 			result.FromAccount,result.ToAccount,err= addMoney(ctx, q, args.FromAccountID, -args.Amount, args.ToAccountID, args.Amount)
 			if err != nil {
 				return err
@@ -96,8 +98,8 @@ func (store Store) TransferTx(ctx context.Context, args CreateTransferParams) (T
 }
 
 type TransferTxParams struct {
-	FromAccountID int64 `json:"from_account_id"`
-	ToAccountID   int64 `json:"to_account_id"`
+	FromAccountID uuid.UUID `json:"from_account_id"`
+	ToAccountID   uuid.UUID `json:"to_account_id"`
 	Amount        int64 `json:"amount"`
 }
 
@@ -112,9 +114,9 @@ type TransferTxResults struct {
 func addMoney(
 	ctx context.Context,
 	q  *Queries,
-	accountID1 int64,
+	accountID1 uuid.UUID,
 	amount1 int64,
-	accountID2 int64,
+	accountID2 uuid.UUID,
 	amount2 int64,
 ) (account1 Account, account2 Account, err error) {
 	account1, err=q.AddAccountBalance(ctx, AddAccountBalanceParams{
