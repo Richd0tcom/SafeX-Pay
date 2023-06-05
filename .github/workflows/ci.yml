@@ -50,6 +50,11 @@ jobs:
     # - name: Build
     #   run: go build -v ./...
 
+    - name: Create Enviroment variables file
+      run: |
+        touch app.env
+        echo "${{ secrets.ENV_FILE }}" > app.env
+
     - name: Install golang migrate
       run: |
         curl -L https://github.com/golang-migrate/migrate/releases/download/v4.16.0/migrate.linux-amd64.tar.gz | tar xvz
