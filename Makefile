@@ -13,6 +13,9 @@ sqlc:
 	sqlc generate
 test:
 	go test -v -cover ./...
+mock:
+# the --build_flags=--mod=mod may be removed in the future.should only be used if you encounter errors on th first run.
+	mockgen -package mockdb -destination db/mock/store.go github.com/Richd0tcom/SafeX-Pay/db/sqlc Store
 
 server:
 	go run main.go

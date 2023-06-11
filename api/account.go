@@ -1,6 +1,7 @@
 package api
 
 import (
+	"database/sql"
 	"net/http"
 
 	db "github.com/Richd0tcom/SafeX-Pay/db/sqlc"
@@ -59,6 +60,10 @@ func (server *Server) getAccount(ctx *gin.Context) {
 
 	account, err:= server.store.GetAccount(ctx,parsedId)
 	if err != nil {
+		if err == sql.ErrNoRows{
+			ctx.JSON(http.StatusNotFound, buildErrorResponse(err))
+			return
+		}
 		ctx.JSON(http.StatusInternalServerError, buildErrorResponse(err))
 		return
 	}
