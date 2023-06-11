@@ -9,22 +9,33 @@ import (
 )
 
 // provides all functions to execute queries and transactions.
-// we will use composition instead of inheritance by mbedding the *Queries struct in the Store
-type Store struct {
+// we will use this interface to mock our tests by providing all the queries (method set) used by the SQLStore struct
+type Store interface {
+	Querier
+	TransferTx(ctx context.Context, args CreateTransferParams) (TransferTxResults, error)
+}
+
+
+// provides all functions to execute queries and transactions.
+//
+// we will use composition instead of inheritance by mbedding the *Queries struct in the Store.
+//
+// SQLStore implements the Store interface.
+type SQLStore struct {
 	*Queries
 	db *sql.DB
 }
 
 // NewStore creates a new Store
-func NewStore(db *sql.DB) *Store {
-	return &Store{
+func NewStore(db *sql.DB) Store {
+	return &SQLStore{
 		db:      db,
 		Queries: New(db),
 	}
 }
 
 // Takes a context and a callback function as input, starts a new database transaction, creat a new Queries object and with that transaction and call the callback function with the created Queries object and finally commit or rollback the transaction based on the error returned by the callback function.
-func (store *Store) execTx(ctx context.Context, fn func(*Queries) error) error {
+func (store *SQLStore) execTx(ctx context.Context, fn func(*Queries) error) error {
 	tx, err := store.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -45,7 +56,7 @@ func (store *Store) execTx(ctx context.Context, fn func(*Queries) error) error {
 }
 
 // TransferTx perform a money transfer from one account to another account
-func (store Store) TransferTx(ctx context.Context, args CreateTransferParams) (TransferTxResults, error) {
+func (store *SQLStore) TransferTx(ctx context.Context, args CreateTransferParams) (TransferTxResults, error) {
 	var result TransferTxResults
 
 	err := store.execTx(ctx, func(q *Queries) error {
